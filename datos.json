@@ -1,0 +1,100 @@
+
+The successor to csvjson is here: an AI agent that can convert your data to and from any format, securely. 
+Try it now  
+ 
+ Turnkey CSV Importer • Installs in minutes 
+	1.	Home
+	2.	csv2json
+	◦	CSV to JSON
+	◦	JSON to CSV
+	◦	SQL to JSON
+	◦	CSVJSON to JSON
+	◦	 
+	◦	JSON Validator
+	◦	JSON Beautifier
+	◦	 
+	◦	Upgrade to Flatfile
+	3.	 
+CSV or TSV JSON
+To get started, upload or paste your data from Excel (saved as CSV or TSV). 
+Upload a CSV file 
+Or paste your CSV here album, year, US_peak_chart_post
+The White Stripes, 1999, -
+De Stijl, 2000, -
+White Blood Cells, 2001, 61
+Elephant, 2003, 6
+Get Behind Me Satan, 2005, 3
+Icky Thump, 2007, 2
+Under Great White Northern Lights, 2010, 11
+Live in Mississippi, 2011, -
+Live at the Gold Dollar, 2012, -
+Nine Miles from the White City, 2013, -
+Convert Clear 
+Separator
+							Auto-detect
+							Comma
+							Semi-colon
+							Tab
+						
+Parse numbers 
+Parse JSON 
+Transpose 
+
+Output: Array 
+Hash 
+Minify 
+JSON 
+Download Copy to clipboard 
+Need help cleaning data?
+Embed all the functionality of csvjson in any web application with Flatfile. Auto-match columns, validate data fields, and provide an intuitive CSV import experience. 
+More Details
+	•	This function is available as a npm package 
+	•	CSV stands for Comma Separated Values. Often used as an interchange data format to represent table records, one per line. CSV is plain text. 
+	•	The CSV format is documented in an RFC memo RFC-4180. 
+	•	The first line is often the header, or column names. Each subsequent row is a record and should have the same number of fields. 
+	•	Fields containing the separator character, line breaks and double-quotes must be enclosed inside double quotes ". 
+	•	Other separator are often used like tabs \tor semi-colons ;. TSV or Tab Separated Values is used to store table data in Clipboards. When data is copied from Excel for example, it is stored as TSV in the Clipboard. 
+	•	With CSVJSON you can parse values as numbers or JSON. Turn on respective Parse Numbers and Parse JSON switches to convert valid numbers and JSON (null, false, true, [] and {}). 
+	•	With CSVJSON you can transpose the csv before conversion. Rows become columns, and columns become rows. 
+	•	With CSVJSON you can output a hash (or object) instead of an array. In that case, the hash key will be the first column. 
+View Change Log 
+Mar 20, 2019
+Bug fix: Detect duplicate column headers and make them unique. GitHub issue #71.
+Feb 2, 2019
+Refactored and published npm package csv2json. Fix for GitHub issue #70.
+Jan 26, 2019
+Improvement: Removed 64k limit on download button. Also fixed issue #68 'Cannot work functional with special letters'.
+Mar 31, 2018
+Improvement: Added option to parse JSON values.
+Dec 18, 2017
+Improvement: Added option to minify or compact JSON. GitHub issue #21
+Oct 7, 2016
+Improvement: Added option to parse number values or not to retain original number formatting. GitHub issue #13
+Jul 09, 2016
+Fixed bug : If no text is present in a csv field, it was assigned 0 (zero) by default.
+Jun 20, 2016
+Bug fix: strings containing quotes and commas were prematurely cut.
+Dec 30, 2015
+Bug fix: drop quotes on keys of nested objects.
+Nov 26, 2015
+Improvement: Added options to transpose and output object instead of array.
+Jan 30, 2014
+Bug fix: Pasting Excel data into Textarea would cause an upload.
+Jan 12, 2014
+Initial release.
+
+	•	Rage designed and built with love by the Flatfile team with the help of our contributors.
+Convert
+	•	CSV to JSON
+	•	JSON to CSV
+	•	SQL to JSON
+	•	CSVJSON to JSON
+Validate & Transform
+	•	JSON Validator
+	•	JSON Beautifier
+Community
+	•	Github
+	•	Change Log
+	•	Issues
+	•	Docs
+	•	Corporate sponsor
