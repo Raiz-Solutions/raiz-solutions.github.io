@@ -160,7 +160,7 @@ function render() {
     const maxRes = filtered.length ? filtered.reduce((p, c) => (p.num_resenas > c.num_resenas ? p : c)) : {num_resenas:0, nombre:'N/A'};
 
     document.getElementById('metricsRow').innerHTML = `
-        <div class="metric-card"><div class="metric-label">Locales Analizados</div><div class="metric-value">${filtered.length.toLocaleString()}</div><div class="metric-sub">Filtros actuales</div></div>
+        <div class="metric-card"><div class="metric-label">Restaurantes Analizados</div><div class="metric-value">${filtered.length.toLocaleString()}</div><div class="metric-sub">Filtros actuales</div></div>
         <div class="metric-card"><div class="metric-label">Competencia en Radio</div><div class="metric-value">${inIso.length.toLocaleString()}</div><div class="metric-sub">Dentro de isócrona</div></div>
         <div class="metric-card"><div class="metric-label">Rating Promedio</div><div class="metric-value">${avgRat.toFixed(1)}</div><div class="metric-sub">Calidad de oferta</div></div>
         <div class="metric-card"><div class="metric-label">Líder Opinión</div><div class="metric-value">${maxRes.num_resenas.toLocaleString()}</div><div class="metric-sub">${maxRes.nombre}</div></div>
