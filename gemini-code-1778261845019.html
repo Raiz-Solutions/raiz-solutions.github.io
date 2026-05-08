@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis ubicación industria restaurantera CDMX</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --lime: #b5cb32;
+            --lime-dim: rgba(181, 203, 50, 0.15);
+            --lime-glow: rgba(181, 203, 50, 0.35);
+            --bg: #181a14;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --surface: rgba(181, 203, 50, 0.06);
+            --text: #e8ecda;
+            --muted: #5a6040;
+            --border: rgba(181, 203, 50, 0.12);
+            --border-strong: rgba(181, 203, 50, 0.28);
+            --radius: 14px;
+            /* CAMBIO: Variable de fuente Gotham */
+            --font-display: 'Montserrat', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: var(--font-display);
+            background: var(--bg);
+            color: var(--text);
+            padding: 24px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(181,203,50,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(181,203,50,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container { max-width: 1440px; margin: 0 auto; position: relative; z-index: 1; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand-icon {
+            width: 36px; height: 36px;
+            border: 1.5px solid var(--lime);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--lime-dim);
+            box-shadow: 0 0 18px var(--lime-glow);
+            flex-shrink: 0;
+        }
+        .brand-icon svg { width: 18px; height: 18px; fill: var(--lime); }
+        .brand h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+        .brand-tag { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em; margin-top: 2px; }
+
+        .filters-area { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .filter-pill {
+            background: var(--bg-card);
+            padding: 8px 14px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .filter-pill label { font-family: var(--font-mono); font-size: 9px; font-weight: 500; color: var(--lime); text-transform: uppercase; }
+        .filter-pill select { border: none; background: transparent; font-family: var(--font-display); font-size: 12px; font-weight: 600; outline: none; cursor: pointer; color: var(--text); }
+
+        .status-bar { font-family: var(--font-mono); font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lime); }
+
+        /* CAMBIO: Corregida distorsión en métricas */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            padding: 18px 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+        }
+
+        .metric-label { font-family: var(--font-mono); font-size: 9px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+        
+        /* CAMBIO: Se añade break-all para evitar distorsión de números */
+        .metric-value { font-size: 26px; font-weight: 800; color: #fff; line-height: 1; word-break: break-all; }
+        .metric-sub { font-family: var(--font-mono); font-size: 10px; color: var(--lime); margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .layout { display: grid; grid-template-columns: 2.5fr 1fr; gap: 18px; margin-bottom: 18px; }
+        @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+        .card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px; position: relative; }
+        #map { height: 520px; width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+
+        /* CAMBIO: Calificación con fondo blanco */
+        .rank-score {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 13px;
+            margin-left: 10px;
+            color: #181a14;
+            background: #ffffff;
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid #fff;
+        }
+
+        .ranking-list { max-height: 520px; overflow-y: auto; }
+        .ranking-item { display: flex; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.02); border-radius: 9px; margin-bottom: 6px; }
+        .rank-name { font-size: 12px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rank-info { flex: 1; min-width: 0; }
+        .rank-info small { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+        .section-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; }
+        .section-divider span { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; }
+        .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        
+        .iso-btn { border: none; background: none; padding: 5px 12px; font-family: var(--font-mono); font-size: 10px; cursor: pointer; color: var(--muted); }
+        .iso-btn.active { background: var(--lime); color: #181a14; border-radius: 5px; }
+        .coord-badge { font-family: var(--font-mono); font-size: 10px; color: var(--muted); background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </div>
+            <div>
+                <h1>Análisis Restaurantero</h1>
+                <div class="brand-tag">CDMX · INTELIGENCIA DE MERCADO</div>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <div class="status-bar"><div class="status-dot"></div><span id="statusText">Cargando datos...</span></div>
+            <div class="filters-area">
+                <div class="filter-pill"><label>Giro</label><select id="catSel" onchange="render()"><option value="all">Cargando...</option></select></div>
+                <div class="filter-pill"><label>Rating</label><select id="ratSel" onchange="render()"><option value="0">Todos</option><option value="4">4.0 +</option></select></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="metrics-grid" id="metricsRow"></div>
+
+    <div class="layout">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <div class="coord-badge" id="coordBadge">19.4140° N, 99.1720° W</div>
+                <div style="display:flex; background:rgba(0,0,0,0.3); padding:3px; border-radius:8px; border:1px solid var(--border);">
+                    <button class="iso-btn active" onclick="setIso(this, 500)">5 min</button>
+                    <button class="iso-btn" onclick="setIso(this, 1000)">10 min</button>
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+        <div class="card">
+            <div class="ranking-list" id="topList"></div>
+        </div>
+    </div>
+
+    <div class="section-divider"><span>Análisis de Categorías & Calidad</span></div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
+        <div class="card" id="catChart"></div>
+        <div class="card"><canvas id="ratingChart" style="max-height:180px;"></canvas></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<script>
+/* Lógica original mantenida intacta */
+let RDATA = [];
+let CURRENT_CENTER = [19.414, -99.172];
+let currentIsoRadius = 500;
+let map, markersCluster, isoCircle, rChart;
+
+async function cargarDatos() {
+    try {
+        const res = await fetch('datos.json');
+        RDATA = await res.json();
+        RDATA.forEach(r => {
+            r.rating = (r.rating === "" || r.rating === "#N/A") ? 0 : parseFloat(r.rating);
+            r.num_resenas = (r.num_resenas === "" || r.num_resenas === "#N/A") ? 0 : parseInt(r.num_resenas);
+        });
+        document.getElementById('statusText').textContent = `${RDATA.length.toLocaleString()} establecimientos`;
+        init();
+    } catch (e) {
+        document.getElementById('statusText').textContent = 'Error datos.json';
+    }
+}
+
+function init() {
+    const cats = [...new Set(RDATA.map(r => r.categoria))].filter(c => c).sort();
+    const sel = document.getElementById('catSel');
+    sel.innerHTML = '<option value="all">Todas las categorías</option>';
+    cats.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        sel.appendChild(o);
+    });
+
+    map = L.map('map').setView(CURRENT_CENTER, 14);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    isoCircle = L.circle(CURRENT_CENTER, {
+        radius: currentIsoRadius, fillColor: 'rgba(181,203,50,0.1)', color: '#b5cb32', weight: 1
+    }).addTo(map);
+
+    markersCluster = L.markerClusterGroup({ disableClusteringAtZoom: 16 });
+    map.addLayer(markersCluster);
+
+    map.on('click', e => {
+        CURRENT_CENTER = [e.latlng.lat, e.latlng.lng];
+        isoCircle.setLatLng(e.latlng);
+        document.getElementById('coordBadge').textContent = `${e.latlng.lat.toFixed(4)}° N, ${e.latlng.lng.toFixed(4)}° W`;
+        render();
+    });
+
+    render();
+}
+
+function setIso(btn, meters) {
+    document.querySelectorAll('.iso-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentIsoRadius = meters;
+    isoCircle.setRadius(meters);
+    render();
+}
+
+function getDist(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180;
+    const dp = (lat2 - lat1) * Math.PI / 180, dl = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function render() {
+    const catFiltro = document.getElementById('catSel').value;
+    const ratMin = parseFloat(document.getElementById('ratSel').value);
+
+    const filtered = RDATA.filter(r => (catFiltro === 'all' || r.categoria === catFiltro) && r.rating >= ratMin);
+    const inIso = filtered.filter(r => getDist(CURRENT_CENTER[0], CURRENT_CENTER[1], r.latitud, r.longitud) <= currentIsoRadius);
+
+    const avgRat = inIso.reduce((s, r) => s + r.rating, 0) / inIso.length || 0;
+    
+    document.getElementById('metricsRow').innerHTML = `
+        <div class="metric-card"><div class="metric-label">Total Base</div><div class="metric-value">${filtered.length}</div><div class="metric-sub">Global</div></div>
+        <div class="metric-card"><div class="metric-label">En Radio</div><div class="metric-value">${inIso.length}</div><div class="metric-sub">Isócrona</div></div>
+        <div class="metric-card"><div class="metric-label">Rating Promedio</div><div class="metric-value">${avgRat.toFixed(2)}</div><div class="metric-sub">Zona</div></div>
+    `;
+
+    markersCluster.clearLayers();
+    inIso.forEach(r => {
+        const color = r.rating >= 4.3 ? '#10b981' : '#f59e0b';
+        L.circleMarker([r.latitud, r.longitud], { radius: 6, fillColor: color, color: '#fff', weight: 1, fillOpacity: 0.8 })
+         .bindPopup(`<b>${r.nombre}</b><br>${r.rating} ⭐`)
+         .addTo(markersCluster);
+    });
+
+    const top = [...inIso].sort((a, b) => b.rating - a.rating).slice(0, 10);
+    document.getElementById('topList').innerHTML = top.map((r, i) => `
+        <div class="ranking-item">
+            <div class="rank-info">
+                <span class="rank-name">${r.nombre}</span>
+                <small>${r.categoria}</small>
+            </div>
+            <div class="rank-score">${r.rating.toFixed(1)}</div>
+        </div>
+    `).join('');
+
+    const b = [0, 0, 0, 0];
+    inIso.forEach(r => { if(r.rating>=4.5) b[3]++; else if(r.rating>=4.0) b[2]++; else if(r.rating>=3.5) b[1]++; else b[0]++; });
+    if (rChart) rChart.destroy();
+    rChart = new Chart(document.getElementById('ratingChart'), {
+        type: 'bar',
+        data: {
+            labels: ['<3.5', '3.5-4', '4-4.5', '4.5+'],
+            datasets: [{ data: b, backgroundColor: 'rgba(181,203,50,0.5)' }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { ticks: { color: '#5a6040' } } } }
+    });
+}
+
+cargarDatos();
+</script>
+</body>
+</html>
