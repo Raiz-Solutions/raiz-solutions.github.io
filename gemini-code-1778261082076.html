@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis ubicación industria restaurantera CDMX</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --lime: #b5cb32;
+            --lime-dim: rgba(181, 203, 50, 0.15);
+            --lime-glow: rgba(181, 203, 50, 0.35);
+            --bg: #181a14;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --surface: rgba(181, 203, 50, 0.06);
+            --text: #e8ecda;
+            --muted: #5a6040;
+            --border: rgba(181, 203, 50, 0.12);
+            --border-strong: rgba(181, 203, 50, 0.28);
+            --radius: 14px;
+            /* Cambio a stack tipo Gotham */
+            --font-display: 'Gotham', 'Montserrat', 'Segoe UI', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: var(--font-display);
+            background: var(--bg);
+            color: var(--text);
+            padding: 24px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Fondo de cuadrícula sutil */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(181,203,50,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(181,203,50,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container { max-width: 1440px; margin: 0 auto; position: relative; z-index: 1; }
+
+        /* ── HEADER ── */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand { display: flex; align-items: center; gap: 14px; }
+
+        .brand-icon {
+            width: 36px; height: 36px;
+            border: 1.5px solid var(--lime);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--lime-dim);
+            box-shadow: 0 0 18px var(--lime-glow);
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; fill: var(--lime); }
+
+        .brand h1 {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .brand-tag {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            margin-top: 2px;
+        }
+
+        /* ── FILTERS ── */
+        .filters-area { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+        .filter-pill {
+            background: var(--bg-card);
+            padding: 8px 14px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-pill label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 500;
+            color: var(--lime);
+            text-transform: uppercase;
+        }
+
+        .filter-pill select {
+            border: none;
+            background: transparent;
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* ── METRICS (Fix Distorsión) ── */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            padding: 22px 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            position: relative;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .metric-label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 26px; /* Ajuste para evitar desborde */
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.1;
+            word-break: break-word; /* Evita que números largos rompan el layout */
+        }
+
+        .metric-sub {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--lime);
+            margin-top: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── RANKING (Fondo Blanco Solicitado) ── */
+        .rank-score {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 13px;
+            margin-left: 10px;
+            color: #181a14; /* Texto oscuro */
+            background: #ffffff; /* Fondo blanco */
+            padding: 4px 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* ── LAYOUT & MAP ── */
+        .layout {
+            display: grid;
+            grid-template-columns: 2.5fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 18px;
+        }
+
+        #map {
+            height: 520px;
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .ranking-list { max-height: 520px; overflow-y: auto; }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 9px;
+            margin-bottom: 8px;
+        }
+
+        .rank-name { font-size: 12px; font-weight: 600; color: var(--text); }
+
+        /* ── CHART STYLES ── */
+        .bar-fill {
+            background: linear-gradient(90deg, var(--lime), #fff);
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .section-divider span {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+            </div>
+            <div>
+                <h1>Análisis Restaurantero</h1>
+                <div class="brand-tag">CDMX · MARKET INTELLIGENCE</div>
+            </div>
+        </div>
+        <div class="filters-area">
+            <div class="filter-pill"><label>Giro</label><select id="catSel" onchange="render()"><option value="all">Cargando...</option></select></div>
+            <div class="filter-pill"><label>Rating</label><select id="ratSel" onchange="render()"><option value="0">Todos</option><option value="4">4.0+</option></select></div>
+        </div>
+    </header>
+
+    <div class="metrics-grid" id="metricsRow"></div>
+
+    <div class="layout">
+        <div class="card">
+            <div id="map"></div>
+        </div>
+        <div class="card">
+            <div class="ranking-list" id="topList"></div>
+        </div>
+    </div>
+
+    <div class="section-divider"><span>Distribución por Calidad</span></div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+        <div class="card" id="catChart"></div>
+        <div class="card"><canvas id="ratingChart"></canvas></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<script>
+// La lógica de renderizado se mantiene igual que tu original, 
+// solo se actualizan las clases CSS mencionadas arriba.
+// [Insertar aquí el bloque <script> de tu archivo original para que funcione con los nuevos estilos]
+</script>
+</body>
+</html>
