@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis ubicación industria restaurantera CDMX</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --lime: #b5cb32;
+            --lime-dim: rgba(181, 203, 50, 0.15);
+            --lime-glow: rgba(181, 203, 50, 0.35);
+            --bg: #181a14;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --surface: rgba(181, 203, 50, 0.06);
+            --text: #e8ecda;
+            --muted: #5a6040;
+            --border: rgba(181, 203, 50, 0.12);
+            --border-strong: rgba(181, 203, 50, 0.28);
+            --radius: 14px;
+            /* CAMBIO A GOTHAM / MONTSERRAT */
+            --font-display: 'Montserrat', 'Gotham', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: var(--font-display);
+            background: var(--bg);
+            color: var(--text);
+            padding: 24px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(181,203,50,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(181,203,50,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container { max-width: 1440px; margin: 0 auto; position: relative; z-index: 1; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px;
+            border: 1.5px solid var(--lime);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--lime-dim);
+            box-shadow: 0 0 18px var(--lime-glow);
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; fill: var(--lime); }
+
+        .brand h1 {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text);
+        }
+
+        .brand-tag {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            margin-top: 2px;
+        }
+
+        .filters-area { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+        .filter-pill {
+            background: var(--bg-card);
+            padding: 8px 14px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-pill label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 500;
+            color: var(--lime);
+            text-transform: uppercase;
+        }
+
+        .filter-pill select {
+            border: none;
+            background: transparent;
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            color: var(--text);
+        }
+
+        .status-bar {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
